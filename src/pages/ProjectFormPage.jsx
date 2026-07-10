@@ -8,6 +8,15 @@ import ImageUpload from '../components/ImageUpload';
 import TagInput from '../components/TagInput';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+// Categories matching the frontend Portfolio.jsx filter tabs exactly
+const CATEGORY_OPTIONS = [
+  { value: 'Recent Projects',    label: 'Recent Projects' },
+  { value: 'Brand Identity',     label: 'Brand Identity' },
+  { value: 'Digital Design',     label: 'Digital Design' },
+  { value: 'Print & Marketing',  label: 'Print & Marketing' },
+  { value: 'Creative Direction', label: 'Creative Direction' },
+];
+
 const EMPTY = {
   title: '', category: '', shortDescription: '', fullDescription: '',
   technologies: [], liveUrl: '', githubUrl: '', featured: false,
@@ -114,7 +123,13 @@ export default function ProjectFormPage() {
 
               <div>
                 <label className="label">Category *</label>
-                <input value={form.category} onChange={set('category')} className="input" placeholder="e.g. Brand Identity · Fashion" required />
+                <select value={form.category} onChange={set('category')} className="input" required>
+                  <option value="">Select a category...</option>
+                  {CATEGORY_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
               </div>
 
               <div>
@@ -194,7 +209,10 @@ export default function ProjectFormPage() {
                   onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))}
                   className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Featured project</span>
+                <div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Show in Recent Projects</span>
+                  <p className="text-xs text-gray-400 mt-0.5">Appears in the "Recent Projects" tab on the frontend</p>
+                </div>
               </label>
             </div>
           </div>

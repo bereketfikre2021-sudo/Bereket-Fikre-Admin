@@ -11,16 +11,16 @@ import SearchInput from '../components/SearchInput';
 import StatusBadge from '../components/StatusBadge';
 import Pagination from '../components/Pagination';
 import InlineThumbnail from '../components/InlineThumbnail';
+import PreviewLinkButton from '../components/PreviewLinkButton';
 
-// Filter tabs matching the frontend Portfolio.jsx tabs exactly
-// category values match the `service` field / `category` stored in DB
+// Filter tabs — values match Portfolio.jsx filter ids / seeded category slugs
 const FILTER_TABS = [
-  { value: '',                          label: 'All' },
-  { value: 'recent',                    label: 'Recent Projects' },
-  { value: 'brand-identity-design',     label: 'Brand Identity' },
-  { value: 'marketing-campaign-design', label: 'Digital Design' },
-  { value: 'print-design',              label: 'Print & Marketing' },
-  { value: 'art-direction-visual-guidance', label: 'Creative Direction' },
+  { value: '',                 label: 'All' },
+  { value: 'recent',           label: 'Recent Projects' },
+  { value: 'brand-identity',   label: 'Brand Identity' },
+  { value: 'digital-design',   label: 'Digital Design' },
+  { value: 'print-marketing',  label: 'Print & Marketing' },
+  { value: 'creative-direction', label: 'Creative Direction' },
 ];
 
 export default function ProjectsPage() {
@@ -31,12 +31,11 @@ export default function ProjectsPage() {
   const [page,     setPage]     = useState(1);
   const [deleteId, setDeleteId] = useState(null);
 
-  // Build API params from the active tab
-  // category values match the `category` field stored in DB (= frontend service value)
   const tabParams = () => {
-    if (tab === 'recent') return { featured: true,      sortBy: 'displayOrder', order: 'asc' };
-    if (tab === '')       return {                       sortBy: 'displayOrder', order: 'asc' };
-    return             { category: tab,              sortBy: 'displayOrder', order: 'asc' };
+    const base = { sortBy: 'displayOrder', order: 'asc' };
+    if (tab === '') return base;
+    if (tab === 'recent') return { ...base, featured: true };
+    return { ...base, filter: tab };
   };
 
   const { data, isLoading } = useQuery({
@@ -80,8 +79,8 @@ export default function ProjectsPage() {
   const projects   = data?.data       || [];
   const pagination = data?.pagination;
 
-  const resetFilters = () => { setSearch(''); setStatus(''); setTab('recent'); setPage(1); };
-  const hasFilters = search || status;
+  const resetFilters = () => { setSearch(''); setStatus(''); setTab(''); setPage(1); };
+  const hasFilters = search || status || tab;
 
   return (
     <div>
@@ -196,6 +195,9 @@ export default function ProjectsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
+                          {p.status === 'PUBLISHED' && (
+                            <PreviewLinkButton entity="Project" slug={p.slug} />
+                          )}
                           <Link
                             to={`/projects/${p.id}/edit`}
                             className="p-1.5 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"

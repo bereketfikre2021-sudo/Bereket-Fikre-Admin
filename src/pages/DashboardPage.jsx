@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import StatusBadge from '../components/StatusBadge';
+import ActivityFeed from '../components/ActivityFeed';
 
 const StatCard = ({ label, value, sub, to, color = 'brand' }) => (
   <Link to={to} className="card p-5 hover:shadow-md transition-shadow group">
@@ -84,7 +85,15 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Admin Activity Feed */}
+        <div className="card p-4 lg:col-span-1">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
+          </div>
+          <ActivityFeed items={recentActivity?.adminActions} />
+        </div>
+
         {/* Recent Contacts */}
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">

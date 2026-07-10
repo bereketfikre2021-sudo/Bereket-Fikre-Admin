@@ -11,6 +11,7 @@ import SearchInput from '../components/SearchInput';
 import StatusBadge from '../components/StatusBadge';
 import Pagination from '../components/Pagination';
 import InlineThumbnail from '../components/InlineThumbnail';
+import PreviewLinkButton from '../components/PreviewLinkButton';
 
 export default function InsightsPage() {
   const qc = useQueryClient();
@@ -155,6 +156,9 @@ export default function InsightsPage() {
                       <td className="px-4 py-3 hidden sm:table-cell"><StatusBadge status={item.status} /></td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
+                          {item.status === 'PUBLISHED' && (
+                            <PreviewLinkButton entity="Insight" slug={item.slug} type={item.type} />
+                          )}
                           <Link to={`/insights/${item.id}/edit`} className="p-1.5 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors" title="Edit">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

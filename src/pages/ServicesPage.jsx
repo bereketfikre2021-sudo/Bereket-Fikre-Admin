@@ -7,6 +7,7 @@ import PageHeader from '../components/PageHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import ConfirmDialog from '../components/ConfirmDialog';
+import PreviewLinkButton from '../components/PreviewLinkButton';
 
 export default function ServicesPage() {
   const qc = useQueryClient();
@@ -80,6 +81,8 @@ export default function ServicesPage() {
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
+                {s.isActive && <PreviewLinkButton entity="Service" slug={s.slug} />}
+
                 {/* Active toggle */}
                 <button
                   onClick={() => toggleActive.mutate({ id: s.id, isActive: s.isActive })}
