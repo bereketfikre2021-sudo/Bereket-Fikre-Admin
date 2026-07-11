@@ -32,8 +32,13 @@ export default function LoginPage() {
       toast.success('Welcome back!');
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      const msg = err.response?.data?.message || 'Login failed. Check your credentials.';
-      toast.error(msg);
+      // Network error = backend is down, not wrong credentials
+      if (!err.response) {
+        toast.error('Cannot connect to server. Please try again in a moment.');
+      } else {
+        const msg = err.response?.data?.message || 'Login failed. Check your credentials.';
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }
