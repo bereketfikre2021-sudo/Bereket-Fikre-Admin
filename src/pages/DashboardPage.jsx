@@ -91,7 +91,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
           </div>
-          <ActivityFeed items={recentActivity?.adminActions} />
+          <ActivityFeed items={recentActivity?.activityLog} />
         </div>
 
         {/* Recent Contacts */}
