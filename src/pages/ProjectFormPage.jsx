@@ -10,11 +10,12 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 // Categories matching the frontend Portfolio.jsx filter tabs exactly
 const CATEGORY_OPTIONS = [
-  { value: 'Recent Projects',    label: 'Recent Projects' },
-  { value: 'Brand Identity',     label: 'Brand Identity' },
-  { value: 'Digital Design',     label: 'Digital Design' },
-  { value: 'Print & Marketing',  label: 'Print & Marketing' },
-  { value: 'Creative Direction', label: 'Creative Direction' },
+  { value: 'Recent Projects',               label: 'Recent Projects' },
+  { value: 'Brand Identity',                label: 'Brand Identity' },
+  { value: 'Digital Design · Social Media', label: 'Digital Design — Social Media' },
+  { value: 'Digital Design · Web Banners',  label: 'Digital Design — Web Banners' },
+  { value: 'Print & Marketing',             label: 'Print & Marketing' },
+  { value: 'Creative Direction',            label: 'Creative Direction' },
 ];
 
 const EMPTY = {

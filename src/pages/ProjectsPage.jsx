@@ -13,14 +13,15 @@ import Pagination from '../components/Pagination';
 import InlineThumbnail from '../components/InlineThumbnail';
 import PreviewLinkButton from '../components/PreviewLinkButton';
 
-// Filter tabs — values match Portfolio.jsx filter ids / seeded category slugs
+// Filter tabs — values match the category field stored in DB
 const FILTER_TABS = [
-  { value: '',                 label: 'All' },
-  { value: 'recent',           label: 'Recent Projects' },
-  { value: 'brand-identity',   label: 'Brand Identity' },
-  { value: 'digital-design',   label: 'Digital Design' },
-  { value: 'print-marketing',  label: 'Print & Marketing' },
-  { value: 'creative-direction', label: 'Creative Direction' },
+  { value: '',                                label: 'All' },
+  { value: 'Recent Projects',                 label: 'Recent Projects' },
+  { value: 'Brand Identity',                  label: 'Brand Identity' },
+  { value: 'Digital Design · Social Media',   label: 'Social Media' },
+  { value: 'Digital Design · Web Banners',    label: 'Web Banners' },
+  { value: 'Print & Marketing',               label: 'Print & Marketing' },
+  { value: 'Creative Direction',              label: 'Creative Direction' },
 ];
 
 export default function ProjectsPage() {
@@ -34,8 +35,9 @@ export default function ProjectsPage() {
   const tabParams = () => {
     const base = { sortBy: 'displayOrder', order: 'asc' };
     if (tab === '') return base;
-    if (tab === 'recent') return { ...base, featured: true };
-    return { ...base, filter: tab };
+    if (tab === 'Recent Projects') return { ...base, featured: true };
+    // All other tabs use category matching
+    return { ...base, category: tab };
   };
 
   const { data, isLoading } = useQuery({
