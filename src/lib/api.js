@@ -79,3 +79,23 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+/**
+ * Download a CSV file from a protected endpoint.
+ * Uses the same axios instance (JWT auth included).
+ */
+export const downloadCsv = async (path, filename) => {
+  const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const token = localStorage.getItem('accessToken');
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Export failed');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};

@@ -7,6 +7,7 @@ import PageHeader from '../components/PageHeader';
 import ImageUpload from '../components/ImageUpload';
 import TagInput from '../components/TagInput';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useUnsavedChanges, UnsavedBanner } from '../hooks/useUnsavedChanges';
 
 const EMPTY = {
   serviceNumber: '01', title: '', category: '', shortDescription: '',
@@ -26,6 +27,9 @@ export default function ServiceFormPage() {
   const [form, setForm] = useState(EMPTY);
   const [featuredImage, setFeaturedImage] = useState(null);
   const [bulletInput, setBulletInput] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
+
+  useUnsavedChanges(isDirty);
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['service', id],
@@ -66,6 +70,7 @@ export default function ServiceFormPage() {
     },
     onSuccess: () => {
       toast.success(isEdit ? 'Service updated!' : 'Service created!');
+      setIsDirty(false);
       qc.invalidateQueries(['services']);
       navigate('/services');
     },
@@ -83,7 +88,7 @@ export default function ServiceFormPage() {
     mutation.mutate(fd);
   };
 
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target?.value ?? e }));
+  const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target?.value ?? e })); setIsDirty(true); };
 
   const addBullet = () => {
     if (bulletInput.trim()) {
@@ -99,6 +104,7 @@ export default function ServiceFormPage() {
 
   return (
     <div className="max-w-4xl">
+      <UnsavedBanner isDirty={isDirty} />
       <PageHeader title={isEdit ? 'Edit Service' : 'New Service'} backTo="/services" />
 
       <form onSubmit={handleSubmit} className="space-y-6">

@@ -49,6 +49,16 @@ export default function InsightsPage() {
     onError: (err) => toast.error(err.response?.data?.message || 'Delete failed'),
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: (id) => api.post(`/admin/insights/${id}/duplicate`),
+    onSuccess: () => {
+      toast.success('Insight duplicated as draft');
+      qc.invalidateQueries(['insights']);
+      qc.invalidateQueries(['dashboard']);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Duplicate failed'),
+  });
+
   const updateInsightInCache = (updatedInsight) => {
     qc.setQueryData(['insights', { search, type, status, page }], (old) => {
       if (!old) return old;
@@ -234,6 +244,16 @@ export default function InsightsPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
                           {item.status === 'PUBLISHED' && <PreviewLinkButton entity="Insight" slug={item.slug} />}
+                          <button
+                            onClick={() => duplicateMutation.mutate(item.id)}
+                            disabled={duplicateMutation.isPending}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                            title="Duplicate as draft"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </button>
                           <Link to={`/insights/${item.id}/edit`} className="p-1.5 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors" title="Edit">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

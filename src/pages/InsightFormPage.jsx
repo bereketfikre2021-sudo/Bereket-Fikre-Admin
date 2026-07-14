@@ -8,6 +8,7 @@ import ImageUpload from '../components/ImageUpload';
 import TagInput from '../components/TagInput';
 import LoadingSpinner from '../components/LoadingSpinner';
 import RichTextEditor from '../components/RichTextEditor';
+import { useUnsavedChanges, UnsavedBanner, useFormSaveShortcut } from '../hooks/useUnsavedChanges';
 
 const EMPTY = {
   type: 'CASE_STUDY', title: '', excerpt: '', content: '',
@@ -24,6 +25,11 @@ export default function InsightFormPage() {
 
   const [form, setForm] = useState(EMPTY);
   const [coverImage, setCoverImage] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const handleSubmitRef = useRef(null);
+
+  useUnsavedChanges(isDirty);
+  useFormSaveShortcut(() => handleSubmitRef.current?.());
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['insight', id],
@@ -58,6 +64,7 @@ export default function InsightFormPage() {
     },
     onSuccess: () => {
       toast.success(isEdit ? 'Insight updated!' : 'Insight created!');
+      setIsDirty(false);
       qc.invalidateQueries(['insights']);
       qc.invalidateQueries(['dashboard']);
       navigate('/insights');
@@ -82,12 +89,13 @@ export default function InsightFormPage() {
     mutation.mutate(fd);
   };
 
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target?.value ?? e }));
+  const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target?.value ?? e })); setIsDirty(true); };
 
   if (isEdit && isLoading) return <LoadingSpinner />;
 
   return (
     <div className="max-w-4xl">
+      <UnsavedBanner isDirty={isDirty} />
       <PageHeader title={isEdit ? 'Edit Insight' : 'New Insight'} backTo="/insights" />
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -130,7 +138,7 @@ export default function InsightFormPage() {
                 <label className="label">Full Content *</label>
                 <RichTextEditor
                   value={form.content}
-                  onChange={(html) => setForm((f) => ({ ...f, content: html }))}
+                  onChange={(html) => { setForm((f) => ({ ...f, content: html })); setIsDirty(true); }}
                   placeholder="Write the full article content here…"
                   minHeight={400}
                 />

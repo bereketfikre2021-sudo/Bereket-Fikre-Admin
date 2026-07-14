@@ -8,6 +8,7 @@ import ImageUpload from '../components/ImageUpload';
 import TagInput from '../components/TagInput';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useUnsavedChanges, UnsavedBanner, useFormSaveShortcut } from '../hooks/useUnsavedChanges';
 
 const CATEGORY_OPTIONS = [
   { value: 'Recent Projects',                label: 'Recent Projects' },
@@ -35,7 +36,13 @@ export default function ProjectFormPage() {
   const [errors,          setErrors]         = useState({});
   const [galleryUploading, setGalleryUploading] = useState(false);
   const [deleteGalleryId, setDeleteGalleryId] = useState(null);
+  const [isDirty,         setIsDirty]        = useState(false);
   const galleryInputRef = useRef(null);
+
+  useUnsavedChanges(isDirty);
+  // Ctrl+S / Cmd+S shortcut — using a ref so the handler always calls the latest version
+  const handleSubmitRef = useRef(null);
+  useFormSaveShortcut(() => handleSubmitRef.current?.());
 
   // ── Fetch existing project (edit mode) ──────────────────────────────────────
   const { data: existing, isLoading } = useQuery({
@@ -74,6 +81,7 @@ export default function ProjectFormPage() {
     },
     onSuccess: () => {
       toast.success(isEdit ? 'Project updated!' : 'Project created!');
+      setIsDirty(false);
       qc.invalidateQueries(['projects']);
       qc.invalidateQueries(['dashboard']);
       navigate('/projects');
@@ -92,7 +100,7 @@ export default function ProjectFormPage() {
   });
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => {
       if (Array.isArray(v)) v.forEach((item) => fd.append(k, item));
@@ -101,8 +109,9 @@ export default function ProjectFormPage() {
     if (thumbnail) fd.append('thumbnail', thumbnail);
     mutation.mutate(fd);
   };
+  handleSubmitRef.current = handleSubmit;
 
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target?.value ?? e }));
+  const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target?.value ?? e })); setIsDirty(true); };
 
   // ── Gallery handlers (edit mode only) ────────────────────────────────────────
   const handleGalleryUpload = async (e) => {
@@ -142,6 +151,7 @@ export default function ProjectFormPage() {
 
   return (
     <div className="max-w-4xl">
+      <UnsavedBanner isDirty={isDirty} />
       <PageHeader title={isEdit ? 'Edit Project' : 'New Project'} backTo="/projects" />
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -243,7 +253,7 @@ export default function ProjectFormPage() {
                 <input
                   type="checkbox"
                   checked={form.featured}
-                  onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))}
+                  onChange={(e) => { setForm((f) => ({ ...f, featured: e.target.checked })); setIsDirty(true); }}
                   className="w-4 h-4 mt-0.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                 />
                 <div>

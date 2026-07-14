@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../lib/api';
+import api, { downloadCsv } from '../lib/api';
 import toast from 'react-hot-toast';
 import PageHeader from '../components/PageHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -12,12 +12,25 @@ import Pagination from '../components/Pagination';
 
 const STATUS_OPTIONS = ['NEW', 'READ', 'REPLIED', 'ARCHIVED'];
 
-function RequestDetail({ request, onClose, onStatusChange }) {
+function RequestDetail({ request, onClose, onStatusChange, onReplySent }) {
   const [notes, setNotes] = useState(request.notes || '');
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
   const handleSaveNotes = () => {
     onStatusChange(request.id, request.status, notes);
     toast.success('Notes saved');
+  };
+
+  const handleSendReply = async () => {
+    if (!replyText.trim()) return;
+    setSendingReply(true);
+    try {
+      await onReplySent(request.id, replyText.trim());
+      setReplyText('');
+    } finally {
+      setSendingReply(false);
+    }
   };
 
   return (
@@ -72,12 +85,40 @@ function RequestDetail({ request, onClose, onStatusChange }) {
             </div>
           </div>
 
+          {/* Reply */}
+          <div>
+            <label className="label">Send Reply <span className="text-xs text-gray-400 font-normal">(sent to {request.email})</span></label>
+            <textarea
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              rows={4}
+              className="input resize-none"
+              placeholder={`Hi ${request.firstName},\n\nThank you for your project request...`}
+            />
+            <button
+              onClick={handleSendReply}
+              disabled={sendingReply || !replyText.trim()}
+              className="btn-primary text-xs mt-2 flex items-center gap-1.5 disabled:opacity-40"
+            >
+              {sendingReply ? (
+                <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Sending...</>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                  Send Reply
+                </>
+              )}
+            </button>
+          </div>
+
           <div>
             <label className="label">Admin Notes (Internal)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              rows={3}
+              rows={2}
               className="input resize-none"
               placeholder="Add notes about this request..."
             />
@@ -101,14 +142,8 @@ function RequestDetail({ request, onClose, onStatusChange }) {
           </div>
 
           <div className="flex gap-2">
-            <a
-              href={`mailto:${request.email}?subject=Re: Your Project Request&body=Hi ${request.firstName},%0D%0A%0D%0AThank you for your project request.%0D%0A%0D%0A`}
-              className="btn-primary text-xs !py-1.5"
-            >
-              Reply via Email
-            </a>
             {request.phone && (
-              <a href={`tel:${request.phone}`} className="btn-secondary text-xs !py-1.5">Call</a>
+              <a href={`tel:${request.phone}`} className="btn-secondary text-xs !py-1.5">Call {request.phone}</a>
             )}
             <button onClick={onClose} className="btn-secondary text-xs !py-1.5 ml-auto">Close</button>
           </div>
@@ -139,6 +174,17 @@ export default function ProjectRequestsPage() {
     },
   });
 
+  const replyMutation = useMutation({
+    mutationFn: ({ id, replyMessage }) => api.post(`/admin/project-requests/${id}/reply`, { replyMessage }),
+    onSuccess: (_, { id }) => {
+      toast.success('Reply sent successfully!');
+      qc.invalidateQueries(['project-requests']);
+      qc.invalidateQueries(['dashboard']);
+      setSelected((s) => s?.id === id ? { ...s, status: 'REPLIED' } : s);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to send reply. Check email settings.'),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/admin/project-requests/${id}`),
     onSuccess: () => {
@@ -163,7 +209,21 @@ export default function ProjectRequestsPage() {
 
   return (
     <div>
-      <PageHeader title="Project Requests" subtitle={`${pagination?.total ?? 0} total`} />
+      <PageHeader
+        title="Project Requests"
+        subtitle={`${pagination?.total ?? 0} total`}
+        action={
+          <button
+            onClick={() => downloadCsv('/admin/project-requests/export', 'project-requests.csv').catch(() => toast.error('Export failed'))}
+            className="btn-secondary flex items-center gap-1.5 text-xs"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export CSV
+          </button>
+        }
+      />
 
       <div className="card p-4 mb-4 flex flex-col sm:flex-row gap-3">
         <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search requests..." />
@@ -236,6 +296,7 @@ export default function ProjectRequestsPage() {
         <RequestDetail
           request={selected}
           onClose={() => setSelected(null)}
+          onReplySent={(id, replyMessage) => replyMutation.mutateAsync({ id, replyMessage })}
           onStatusChange={(id, status, notes) => {
             updateStatus.mutate({ id, status, notes });
             setSelected((s) => ({ ...s, status, notes }));

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../lib/api';
+import api, { downloadCsv } from '../lib/api';
 import toast from 'react-hot-toast';
 import PageHeader from '../components/PageHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -12,14 +12,27 @@ import Pagination from '../components/Pagination';
 
 const STATUS_OPTIONS = ['NEW', 'READ', 'REPLIED', 'ARCHIVED'];
 
-function ContactDetail({ contact, onClose, onStatusChange, onNotesSave }) {
+function ContactDetail({ contact, onClose, onStatusChange, onNotesSave, onReplySent }) {
   const [notes, setNotes] = useState(contact.notes || '');
   const [savingNotes, setSavingNotes] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
   const handleSaveNotes = async () => {
     setSavingNotes(true);
     await onNotesSave(contact.id, contact.status, notes);
     setSavingNotes(false);
+  };
+
+  const handleSendReply = async () => {
+    if (!replyText.trim()) return;
+    setSendingReply(true);
+    try {
+      await onReplySent(contact.id, replyText.trim());
+      setReplyText('');
+    } finally {
+      setSendingReply(false);
+    }
   };
 
   return (
@@ -57,17 +70,50 @@ function ContactDetail({ contact, onClose, onStatusChange, onNotesSave }) {
           </div>
         </div>
 
+        {/* Reply */}
+        <div className="mb-4">
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+            Send Reply
+            <span className="ml-1 font-normal text-gray-400">(sent directly to {contact.email})</span>
+          </label>
+          <textarea
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            rows={4}
+            placeholder={`Hi ${contact.name},\n\nThank you for reaching out...`}
+            className="input resize-none text-sm"
+          />
+          <div className="flex justify-end mt-1.5">
+            <button
+              onClick={handleSendReply}
+              disabled={sendingReply || !replyText.trim()}
+              className="btn-primary !py-1.5 !px-4 text-xs disabled:opacity-40 flex items-center gap-1.5"
+            >
+              {sendingReply ? (
+                <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Sending...</>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                  Send Reply
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* Notes */}
         <div className="mb-4">
           <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
-            Notes
-            <span className="ml-1 font-normal text-gray-400">(internal — not visible to sender)</span>
+            Internal Notes
+            <span className="ml-1 font-normal text-gray-400">(not visible to sender)</span>
           </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            placeholder="Add a reply note, follow-up reminder, or context…"
+            rows={2}
+            placeholder="Add a follow-up reminder or context…"
             className="input resize-none text-sm"
           />
           <div className="flex justify-end mt-1.5">
@@ -83,10 +129,7 @@ function ContactDetail({ contact, onClose, onStatusChange, onNotesSave }) {
 
         {/* Actions */}
         <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-          <a href={`mailto:${contact.email}?subject=Re: ${contact.subject}`} className="btn-primary text-xs !py-1.5">
-            Reply via Email
-          </a>
-          <button onClick={onClose} className="btn-secondary text-xs !py-1.5">Close</button>
+          <button onClick={onClose} className="btn-secondary text-xs !py-1.5 ml-auto">Close</button>
         </div>
       </div>
     </div>
@@ -112,6 +155,17 @@ export default function ContactsPage() {
       qc.invalidateQueries(['contacts']);
       qc.invalidateQueries(['dashboard']);
     },
+  });
+
+  const replyMutation = useMutation({
+    mutationFn: ({ id, replyMessage }) => api.post(`/admin/contacts/${id}/reply`, { replyMessage }),
+    onSuccess: (_, { id }) => {
+      toast.success('Reply sent successfully!');
+      qc.invalidateQueries(['contacts']);
+      qc.invalidateQueries(['dashboard']);
+      setSelected((s) => s?.id === id ? { ...s, status: 'REPLIED' } : s);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to send reply. Check email settings.'),
   });
 
   const deleteMutation = useMutation({
@@ -144,7 +198,21 @@ export default function ContactsPage() {
 
   return (
     <div>
-      <PageHeader title="Contact Messages" subtitle={`${pagination?.total ?? 0} total`} />
+      <PageHeader
+        title="Contact Messages"
+        subtitle={`${pagination?.total ?? 0} total`}
+        action={
+          <button
+            onClick={() => downloadCsv('/admin/contacts/export', 'contacts.csv').catch(() => toast.error('Export failed'))}
+            className="btn-secondary flex items-center gap-1.5 text-xs"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export CSV
+          </button>
+        }
+      />
 
       <div className="card p-4 mb-4 flex flex-col sm:flex-row gap-3">
         <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search messages..." />
@@ -222,6 +290,7 @@ export default function ContactsPage() {
           contact={selected}
           onClose={() => setSelected(null)}
           onNotesSave={handleNotesSave}
+          onReplySent={(id, replyMessage) => replyMutation.mutateAsync({ id, replyMessage })}
           onStatusChange={(id, status) => {
             updateStatus.mutate({ id, status });
             setSelected((s) => ({ ...s, status }));

@@ -4,6 +4,7 @@ import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import StatusBadge from '../components/StatusBadge';
 import ActivityFeed from '../components/ActivityFeed';
+import SparklineChart from '../components/SparklineChart';
 
 const StatCard = ({ label, value, sub, to, color = 'brand' }) => (
   <Link to={to} className="card p-5 hover:shadow-md transition-shadow group">
@@ -25,7 +26,7 @@ export default function DashboardPage() {
 
   if (isLoading) return <LoadingSpinner message="Loading dashboard..." />;
 
-  const { stats, recentActivity } = data || {};
+  const { stats, recentActivity, trends } = data || {};
 
   return (
     <div className="space-y-6">
@@ -83,6 +84,27 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* 30-day Trends */}
+      {trends && (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">30-Day Trends</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <SparklineChart
+              data={trends.contacts}
+              color="brand"
+              label="Contact Messages"
+              total={stats?.contacts.total}
+            />
+            <SparklineChart
+              data={trends.requests}
+              color="blue"
+              label="Project Requests"
+              total={stats?.projectRequests.total}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
