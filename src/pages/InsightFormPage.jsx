@@ -7,6 +7,7 @@ import PageHeader from '../components/PageHeader';
 import ImageUpload from '../components/ImageUpload';
 import TagInput from '../components/TagInput';
 import LoadingSpinner from '../components/LoadingSpinner';
+import RichTextEditor from '../components/RichTextEditor';
 
 const EMPTY = {
   type: 'CASE_STUDY', title: '', excerpt: '', content: '',
@@ -66,6 +67,12 @@ export default function InsightFormPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Rich text editor produces HTML; treat empty paragraph as no content
+    const contentText = form.content.replace(/<[^>]*>/g, '').trim();
+    if (!contentText) {
+      toast.error('Full content is required.');
+      return;
+    }
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => {
       if (Array.isArray(v)) v.forEach((item) => fd.append(k, item));
@@ -120,8 +127,13 @@ export default function InsightFormPage() {
               </div>
 
               <div>
-                <label className="label">Full Content * <span className="text-xs text-gray-400 font-normal">(HTML or Markdown)</span></label>
-                <textarea value={form.content} onChange={set('content')} rows={12} className="input font-mono text-xs" placeholder="Write the full content here..." required />
+                <label className="label">Full Content *</label>
+                <RichTextEditor
+                  value={form.content}
+                  onChange={(html) => setForm((f) => ({ ...f, content: html }))}
+                  placeholder="Write the full article content here…"
+                  minHeight={400}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

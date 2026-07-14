@@ -12,10 +12,19 @@ import Pagination from '../components/Pagination';
 
 const STATUS_OPTIONS = ['NEW', 'READ', 'REPLIED', 'ARCHIVED'];
 
-function ContactDetail({ contact, onClose, onStatusChange }) {
+function ContactDetail({ contact, onClose, onStatusChange, onNotesSave }) {
+  const [notes, setNotes] = useState(contact.notes || '');
+  const [savingNotes, setSavingNotes] = useState(false);
+
+  const handleSaveNotes = async () => {
+    setSavingNotes(true);
+    await onNotesSave(contact.id, contact.status, notes);
+    setSavingNotes(false);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="card max-w-lg w-full p-6 shadow-xl max-h-[80vh] overflow-y-auto">
+      <div className="card max-w-lg w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between mb-4">
           <div>
             <h2 className="text-base font-semibold text-gray-900 dark:text-white">{contact.subject}</h2>
@@ -28,16 +37,14 @@ function ContactDetail({ contact, onClose, onStatusChange }) {
           </button>
         </div>
 
+        {/* Message */}
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
           <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{contact.message}</p>
         </div>
 
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs text-gray-400">
-              {new Date(contact.createdAt).toLocaleString()}
-            </p>
-          </div>
+        {/* Status + date row */}
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <p className="text-xs text-gray-400">{new Date(contact.createdAt).toLocaleString()}</p>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 dark:text-gray-400">Status:</span>
             <select
@@ -50,7 +57,32 @@ function ContactDetail({ contact, onClose, onStatusChange }) {
           </div>
         </div>
 
-        <div className="mt-4 flex gap-2">
+        {/* Notes */}
+        <div className="mb-4">
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+            Notes
+            <span className="ml-1 font-normal text-gray-400">(internal — not visible to sender)</span>
+          </label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            placeholder="Add a reply note, follow-up reminder, or context…"
+            className="input resize-none text-sm"
+          />
+          <div className="flex justify-end mt-1.5">
+            <button
+              onClick={handleSaveNotes}
+              disabled={savingNotes || notes === (contact.notes || '')}
+              className="btn-secondary !py-1 !px-3 text-xs disabled:opacity-40"
+            >
+              {savingNotes ? 'Saving…' : 'Save note'}
+            </button>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
           <a href={`mailto:${contact.email}?subject=Re: ${contact.subject}`} className="btn-primary text-xs !py-1.5">
             Reply via Email
           </a>
@@ -75,7 +107,7 @@ export default function ContactsPage() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: ({ id, status }) => api.put(`/admin/contacts/${id}/status`, { status }),
+    mutationFn: ({ id, status, notes }) => api.put(`/admin/contacts/${id}/status`, { status, notes }),
     onSuccess: () => {
       qc.invalidateQueries(['contacts']);
       qc.invalidateQueries(['dashboard']);
@@ -102,6 +134,12 @@ export default function ContactsPage() {
     if (contact.status === 'NEW') {
       updateStatus.mutate({ id: contact.id, status: 'READ' });
     }
+  };
+
+  const handleNotesSave = async (id, status, notes) => {
+    await updateStatus.mutateAsync({ id, status, notes });
+    setSelected((s) => ({ ...s, notes }));
+    toast.success('Note saved');
   };
 
   return (
@@ -147,7 +185,15 @@ export default function ContactsPage() {
                           <p className="text-xs text-gray-400">{c.email}</p>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 hidden md:table-cell max-w-[200px] truncate">{c.subject}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 hidden md:table-cell max-w-[200px]">
+                        <p className="truncate">{c.subject}</p>
+                        {c.notes && (
+                          <p className="text-xs text-brand-500 dark:text-brand-400 mt-0.5 flex items-center gap-1">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                            <span className="truncate">{c.notes}</span>
+                          </p>
+                        )}
+                      </td>
                       <td className="px-4 py-3 hidden sm:table-cell"><StatusBadge status={c.status} /></td>
                       <td className="px-4 py-3 text-xs text-gray-400 hidden lg:table-cell">{new Date(c.createdAt).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
@@ -175,6 +221,7 @@ export default function ContactsPage() {
         <ContactDetail
           contact={selected}
           onClose={() => setSelected(null)}
+          onNotesSave={handleNotesSave}
           onStatusChange={(id, status) => {
             updateStatus.mutate({ id, status });
             setSelected((s) => ({ ...s, status }));
