@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
@@ -73,7 +73,7 @@ export default function InsightFormPage() {
   });
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     // Rich text editor produces HTML; treat empty paragraph as no content
     const contentText = form.content.replace(/<[^>]*>/g, '').trim();
     if (!contentText) {
@@ -88,6 +88,7 @@ export default function InsightFormPage() {
     if (coverImage) fd.append('coverImage', coverImage);
     mutation.mutate(fd);
   };
+  handleSubmitRef.current = handleSubmit;
 
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target?.value ?? e })); setIsDirty(true); };
 

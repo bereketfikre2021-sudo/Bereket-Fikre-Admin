@@ -9,6 +9,7 @@ import PageHeader from '../components/PageHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import ConfirmDialog from '../components/ConfirmDialog';
+import RichTextEditor from '../components/RichTextEditor';
 import { SortableItem } from '../components/DragHandle';
 
 function FaqModal({ faq, onClose, onSave }) {
@@ -19,19 +20,22 @@ function FaqModal({ faq, onClose, onSave }) {
     isActive: faq?.isActive !== false,
   });
   const [saving, setSaving] = useState(false);
-
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target?.value ?? e }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.answer.replace(/<[^>]*>/g, '').trim()) {
+      toast.error('Answer is required.');
+      return;
+    }
     setSaving(true);
     await onSave(form);
     setSaving(false);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="card max-w-lg w-full p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
+      <div className="card max-w-2xl w-full p-6 shadow-xl my-4">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{faq ? 'Edit FAQ' : 'Add FAQ'}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -40,7 +44,12 @@ function FaqModal({ faq, onClose, onSave }) {
           </div>
           <div>
             <label className="label">Answer *</label>
-            <textarea value={form.answer} onChange={set('answer')} rows={5} className="input" required />
+            <RichTextEditor
+              value={form.answer}
+              onChange={(html) => setForm((f) => ({ ...f, answer: html }))}
+              placeholder="Write the answer here…"
+              minHeight={200}
+            />
           </div>
           <div>
             <label className="label">Category</label>
@@ -196,7 +205,10 @@ export default function FaqPage() {
 
                       {expanded === faq.id && (
                         <div className="px-4 pb-4 pt-0 border-t border-gray-100 dark:border-gray-800">
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-3 leading-relaxed">{faq.answer}</p>
+                          <div
+                            className="text-sm text-gray-600 dark:text-gray-400 mt-3 leading-relaxed prose prose-sm dark:prose-invert max-w-none"
+                            dangerouslySetInnerHTML={{ __html: faq.answer }}
+                          />
                         </div>
                       )}
                     </div>

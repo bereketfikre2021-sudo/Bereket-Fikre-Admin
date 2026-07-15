@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
@@ -7,7 +7,7 @@ import PageHeader from '../components/PageHeader';
 import ImageUpload from '../components/ImageUpload';
 import TagInput from '../components/TagInput';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { useUnsavedChanges, UnsavedBanner } from '../hooks/useUnsavedChanges';
+import { useUnsavedChanges, UnsavedBanner, useFormSaveShortcut } from '../hooks/useUnsavedChanges';
 
 const EMPTY = {
   serviceNumber: '01', title: '', category: '', shortDescription: '',
@@ -28,8 +28,10 @@ export default function ServiceFormPage() {
   const [featuredImage, setFeaturedImage] = useState(null);
   const [bulletInput, setBulletInput] = useState('');
   const [isDirty, setIsDirty] = useState(false);
+  const handleSubmitRef = useRef(null);
 
   useUnsavedChanges(isDirty);
+  useFormSaveShortcut(() => handleSubmitRef.current?.());
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['service', id],
@@ -78,7 +80,7 @@ export default function ServiceFormPage() {
   });
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => {
       if (Array.isArray(v)) v.forEach((item) => fd.append(k, item));
@@ -87,6 +89,7 @@ export default function ServiceFormPage() {
     if (featuredImage) fd.append('featuredImage', featuredImage);
     mutation.mutate(fd);
   };
+  handleSubmitRef.current = handleSubmit;
 
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target?.value ?? e })); setIsDirty(true); };
 
