@@ -2,8 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import StatusBadge from '../components/StatusBadge';
-import ActivityFeed from '../components/ActivityFeed';
 import SparklineChart from '../components/SparklineChart';
 
 const StatCard = ({ label, value, sub, to, color = 'brand' }) => (
@@ -18,15 +16,50 @@ const StatCard = ({ label, value, sub, to, color = 'brand' }) => (
   </Link>
 );
 
+/** Small stat tile used in the analytics section */
+const AnalyticTile = ({ label, value, suffix = '' }) => (
+  <div className="card p-4">
+    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</p>
+    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+      {value ?? '—'}{value != null && suffix ? <span className="text-sm font-normal text-gray-400 ml-1">{suffix}</span> : null}
+    </p>
+  </div>
+);
+
+/** Bar-style list row */
+const BarRow = ({ label, value, max }) => {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs">
+        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[70%]">{label}</span>
+        <span className="text-gray-500 dark:text-gray-400 font-medium">{value.toLocaleString()}</span>
+      </div>
+      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+        <div className="h-full bg-brand-500 rounded-full" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+};
+
 export default function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => api.get('/admin/dashboard').then((r) => r.data.data),
   });
 
+  // GA analytics — non-blocking, gracefully hidden if credentials not set
+  const { data: gaData, isLoading: gaLoading, isError: gaError } = useQuery({
+    queryKey: ['analytics'],
+    queryFn: () => api.get('/admin/analytics/all').then((r) => r.data.data),
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 min — matches backend cache
+  });
+
   if (isLoading) return <LoadingSpinner message="Loading dashboard..." />;
 
-  const { stats, recentActivity, trends } = data || {};
+  const { stats, trends } = data || {};
+  const ga = gaData || null;
 
   return (
     <div className="space-y-6">
@@ -106,80 +139,82 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Admin Activity Feed */}
-        <div className="card p-4 lg:col-span-1">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
-          </div>
-          <ActivityFeed items={recentActivity?.activityLog} />
-        </div>
+      {/* Google Analytics Section */}
+      {!gaError && (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+            Website Analytics
+            {ga?.realtime?.activeUsers != null && (
+              <span className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400 normal-case">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                {ga.realtime.activeUsers} active now
+              </span>
+            )}
+          </h2>
 
-        {/* Recent Contacts */}
-        <div className="card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Messages</h3>
-            <Link to="/contacts" className="text-xs text-brand-600 dark:text-brand-400 hover:underline">View all</Link>
-          </div>
-          {recentActivity?.contacts?.length > 0 ? (
-            <div className="space-y-2">
-              {recentActivity.contacts.map((c) => (
-                <Link
-                  key={c.id}
-                  to="/contacts"
-                  className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-full flex items-center justify-center text-xs font-semibold text-brand-700 dark:text-brand-300 flex-shrink-0 mt-0.5">
-                    {c.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{c.name}</p>
-                      <StatusBadge status={c.status} />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{c.subject}</p>
-                  </div>
-                </Link>
-              ))}
+          {gaLoading ? (
+            <div className="card p-6 flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : (
-            <p className="text-sm text-gray-400 text-center py-4">No messages yet</p>
-          )}
-        </div>
+          ) : ga ? (
+            <div className="space-y-4">
+              {/* Visitor overview tiles */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <AnalyticTile label="Today" value={ga.overview.visitorsToday?.toLocaleString()} />
+                <AnalyticTile label="This Week" value={ga.overview.visitorsThisWeek?.toLocaleString()} />
+                <AnalyticTile label="This Month" value={ga.overview.visitorsThisMonth?.toLocaleString()} />
+                <AnalyticTile label="Total Users" value={ga.overview.totalUsers?.toLocaleString()} />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <AnalyticTile label="Page Views" value={ga.overview.pageViews?.toLocaleString()} />
+                <AnalyticTile label="Avg Session" value={ga.overview.avgSessionDuration} suffix="s" />
+                <AnalyticTile label="Bounce Rate" value={ga.overview.bounceRate} suffix="%" />
+              </div>
 
-        {/* Recent Project Requests */}
-        <div className="card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Project Requests</h3>
-            <Link to="/project-requests" className="text-xs text-brand-600 dark:text-brand-400 hover:underline">View all</Link>
-          </div>
-          {recentActivity?.projectRequests?.length > 0 ? (
-            <div className="space-y-2">
-              {recentActivity.projectRequests.map((r) => (
-                <Link
-                  key={r.id}
-                  to="/project-requests"
-                  className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-full flex items-center justify-center text-xs font-semibold text-brand-700 dark:text-brand-300 flex-shrink-0 mt-0.5">
-                    {r.firstName.charAt(0).toUpperCase()}
+              {/* Bottom grid: top pages, traffic sources, countries, devices */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                {/* Top Pages */}
+                <div className="card p-4 space-y-3">
+                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Top Pages</h3>
+                  {ga.topPages?.slice(0, 6).map((p, i) => (
+                    <BarRow key={i} label={p.dimension || '/'} value={p.value} max={ga.topPages[0]?.value || 1} />
+                  ))}
+                </div>
+                {/* Traffic Sources */}
+                <div className="card p-4 space-y-3">
+                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Traffic Sources</h3>
+                  {ga.trafficSources?.slice(0, 6).map((s, i) => (
+                    <BarRow key={i} label={s.dimension} value={s.value} max={ga.trafficSources[0]?.value || 1} />
+                  ))}
+                </div>
+                {/* Countries */}
+                <div className="card p-4 space-y-3">
+                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Countries</h3>
+                  {ga.countries?.slice(0, 6).map((c, i) => (
+                    <BarRow key={i} label={c.dimension} value={c.value} max={ga.countries[0]?.value || 1} />
+                  ))}
+                </div>
+                {/* Devices + Browsers */}
+                <div className="space-y-4">
+                  <div className="card p-4 space-y-3">
+                    <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Devices</h3>
+                    {ga.devices?.map((d, i) => (
+                      <BarRow key={i} label={d.dimension} value={d.value} max={ga.devices[0]?.value || 1} />
+                    ))}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{r.firstName} {r.lastName}</p>
-                      <StatusBadge status={r.status} />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{r.serviceNeeded}</p>
+                  <div className="card p-4 space-y-3">
+                    <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Browsers</h3>
+                    {ga.browsers?.slice(0, 4).map((b, i) => (
+                      <BarRow key={i} label={b.dimension} value={b.value} max={ga.browsers[0]?.value || 1} />
+                    ))}
                   </div>
-                </Link>
-              ))}
+                </div>
+              </div>
             </div>
-          ) : (
-            <p className="text-sm text-gray-400 text-center py-4">No requests yet</p>
-          )}
+          ) : null}
         </div>
-      </div>
+      )}
+
     </div>
   );
 }

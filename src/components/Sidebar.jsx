@@ -134,9 +134,17 @@ export default function Sidebar({ open, onClose }) {
       {/* Logo */}
       <div className="flex items-center justify-between h-16 px-5 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-            BF
-          </div>
+          {admin?.avatar ? (
+            <img
+              src={admin.avatar}
+              alt={admin.name}
+              className="w-8 h-8 rounded-full object-cover ring-2 ring-brand-200 dark:ring-brand-800"
+            />
+          ) : (
+            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+              {admin?.name?.charAt(0).toUpperCase() || 'B'}
+            </div>
+          )}
           <span className="font-semibold text-gray-900 dark:text-white text-sm">Admin Panel</span>
         </div>
         <button
