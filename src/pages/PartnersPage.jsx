@@ -34,8 +34,8 @@ function PartnerModal({ partner, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="card max-w-md w-full p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
+      <div className="card max-w-md w-full p-4 sm:p-6 shadow-xl my-4">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
           {partner ? 'Edit Partner' : 'Add Partner'}
         </h2>
@@ -88,13 +88,13 @@ function TestimonialModal({ t, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
-      <div className="card max-w-lg w-full p-6 shadow-xl my-4">
+      <div className="card max-w-lg w-full p-4 sm:p-6 shadow-xl my-4">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
           {t ? 'Edit Testimonial' : 'Add Testimonial'}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <ImageUpload label="Profile Image" currentUrl={t?.profileImage} onChange={setProfileImage} hint="Square image recommended" />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="label">Client Name *</label>
               <input value={form.clientName} onChange={set('clientName')} className="input" required />
@@ -112,12 +112,12 @@ function TestimonialModal({ t, onClose, onSave }) {
             <label className="label">Testimonial *</label>
             <textarea value={form.testimonial} onChange={set('testimonial')} rows={3} className="input resize-none" required />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="label">Rating (1-5)</label>
               <input type="number" value={form.rating} onChange={set('rating')} className="input" min={1} max={5} />
             </div>
-            <div className="flex flex-col gap-1.5 justify-end pb-1 col-span-2">
+            <div className="flex flex-col gap-1.5 justify-end pb-1 col-span-1 sm:col-span-2">
               <label className="flex items-center gap-2 cursor-pointer text-sm">
                 <input type="checkbox" checked={form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} className="w-4 h-4 rounded border-gray-300 text-brand-600" />
                 Featured

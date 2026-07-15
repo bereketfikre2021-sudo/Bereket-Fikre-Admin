@@ -156,7 +156,7 @@ export default function ProjectFormPage() {
       <PageHeader title={isEdit ? 'Edit Project' : 'New Project'} backTo="/projects" />
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
 
           {/* ── Left column ── */}
           <div className="lg:col-span-2 space-y-5">
@@ -352,8 +352,8 @@ export default function ProjectFormPage() {
         )}
 
         {/* ── Submit ── */}
-        <div className="flex gap-3">
-          <button type="submit" disabled={mutation.isPending} className="btn-primary">
+        <div className="flex flex-wrap gap-3">
+          <button type="submit" disabled={mutation.isPending} className="btn-primary flex-1 sm:flex-none justify-center">
             {mutation.isPending ? (
               <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</>
             ) : (isEdit ? 'Update Project' : 'Create Project')}

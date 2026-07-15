@@ -100,7 +100,7 @@ export default function InsightFormPage() {
       <PageHeader title={isEdit ? 'Edit Insight' : 'New Insight'} backTo="/insights" />
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           <div className="lg:col-span-2 space-y-5">
             <div className="card p-5 space-y-4">
               <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Content</h2>
@@ -200,13 +200,13 @@ export default function InsightFormPage() {
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <button type="submit" disabled={mutation.isPending} className="btn-primary">
+        <div className="flex flex-wrap gap-3">
+          <button type="submit" disabled={mutation.isPending} className="btn-primary flex-1 sm:flex-none justify-center">
             {mutation.isPending ? (
               <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</>
             ) : (isEdit ? 'Update Insight' : 'Create Insight')}
           </button>
-          <button type="button" onClick={() => navigate('/insights')} className="btn-secondary">Cancel</button>
+          <button type="button" onClick={() => navigate('/insights')} className="btn-secondary flex-1 sm:flex-none justify-center">Cancel</button>
         </div>
       </form>
     </div>

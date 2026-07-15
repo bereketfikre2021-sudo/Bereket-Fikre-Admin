@@ -76,7 +76,7 @@ export default function SettingsPage() {
           <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Account Information</h2>
 
           {/* Clickable avatar */}
-          <div className="flex items-center gap-4 mb-5 pb-5 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex flex-wrap items-center gap-4 mb-5 pb-5 border-b border-gray-100 dark:border-gray-800">
             <div
               className="relative w-16 h-16 rounded-full cursor-pointer group flex-shrink-0"
               onClick={() => avatarInputRef.current?.click()}

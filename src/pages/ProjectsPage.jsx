@@ -183,12 +183,12 @@ export default function ProjectsPage() {
       />
 
       {/* Filter Tabs */}
-      <div className="flex gap-1 flex-wrap mb-3">
+      <div className="flex gap-1 flex-wrap mb-3 overflow-x-auto pb-1 -mx-1 px-1">
         {FILTER_TABS.map((t) => (
           <button
             key={t.value}
             onClick={() => { setTab(t.value); setPage(1); setSelected(new Set()); }}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
               tab === t.value
                 ? 'bg-brand-600 text-white'
                 : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -297,7 +297,7 @@ export default function ProjectsPage() {
                                     shape="rounded-lg"
                                   />
                                   <div className="min-w-0">
-                                    <p className="font-medium text-gray-900 dark:text-white truncate max-w-[200px]">{p.title}</p>
+                                    <p className="font-medium text-gray-900 dark:text-white truncate max-w-[140px] sm:max-w-[200px]">{p.title}</p>
                                     {p.featured && <span className="text-xs text-brand-600 dark:text-brand-400 font-medium">★ Recent</span>}
                                   </div>
                                 </div>

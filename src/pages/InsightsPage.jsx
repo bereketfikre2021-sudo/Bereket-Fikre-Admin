@@ -137,7 +137,7 @@ export default function InsightsPage() {
       />
 
       {/* Type tabs */}
-      <div className="flex gap-1 flex-wrap mb-3">
+      <div className="flex gap-1 flex-wrap mb-3 overflow-x-auto pb-1">
         {INSIGHT_TABS.map((t) => (
           <button
             key={t.value}
@@ -229,7 +229,7 @@ export default function InsightsPage() {
                             shape="rounded-lg"
                           />
                           <div className="min-w-0">
-                            <p className="font-medium text-gray-900 dark:text-white truncate max-w-[200px]">{item.title}</p>
+                            <p className="font-medium text-gray-900 dark:text-white truncate max-w-[140px] sm:max-w-[200px]">{item.title}</p>
                             {item.readingTime && <p className="text-xs text-gray-400">{item.readingTime} min read</p>}
                           </div>
                         </div>

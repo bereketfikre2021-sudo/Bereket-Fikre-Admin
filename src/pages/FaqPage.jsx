@@ -35,7 +35,7 @@ function FaqModal({ faq, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
-      <div className="card max-w-2xl w-full p-6 shadow-xl my-4">
+      <div className="card max-w-2xl w-full p-4 sm:p-6 shadow-xl my-4">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{faq ? 'Edit FAQ' : 'Add FAQ'}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

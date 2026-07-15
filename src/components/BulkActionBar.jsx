@@ -14,13 +14,13 @@ export default function BulkActionBar({ count, onPublish, onUnpublish, onDelete,
   if (count === 0) return null;
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-lg mb-3 flex-wrap">
+    <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-lg mb-3 flex-wrap">
       {/* Selection count */}
       <span className="text-sm font-medium text-brand-700 dark:text-brand-300 flex-shrink-0">
         {count} selected
       </span>
 
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         {/* Publish */}
         <button
           onClick={onPublish}

@@ -107,7 +107,7 @@ export default function DashboardPage() {
       )}
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Admin Activity Feed */}
         <div className="card p-4 lg:col-span-1">
           <div className="flex items-center justify-between mb-3">
