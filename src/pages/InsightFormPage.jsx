@@ -145,7 +145,7 @@ export default function InsightFormPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Category *</label>
                   <input value={form.category} onChange={set('category')} className="input" placeholder="Brand Design · Identity" required />

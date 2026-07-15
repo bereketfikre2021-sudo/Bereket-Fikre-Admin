@@ -116,7 +116,7 @@ export default function ServiceFormPage() {
             <div className="card p-5 space-y-4">
               <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Basic Info</h2>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Service Number</label>
                   <input value={form.serviceNumber} onChange={set('serviceNumber')} className="input" placeholder="01" />
@@ -175,7 +175,7 @@ export default function ServiceFormPage() {
             {/* CTA & SEO */}
             <div className="card p-5 space-y-4">
               <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">CTA & Details</h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">CTA Button Text</label>
                   <input value={form.ctaText} onChange={set('ctaText')} className="input" />

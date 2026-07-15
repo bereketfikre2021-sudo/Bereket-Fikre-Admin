@@ -88,11 +88,12 @@ export default function ProjectFormPage() {
     },
     onError: (err) => {
       const data = err.response?.data;
-      if (data?.errors) {
+      if (data?.errors && data.errors.length > 0) {
         const errs = {};
         data.errors.forEach(({ field, message }) => { errs[field] = message; });
         setErrors(errs);
-        toast.error('Please fix the validation errors.');
+        const details = data.errors.map(({ field, message }) => `${field}: ${message}`).join('\n');
+        toast.error(`Validation failed:\n${details}`, { duration: 8000 });
       } else {
         toast.error(data?.message || 'Save failed.');
       }
@@ -194,7 +195,7 @@ export default function ProjectFormPage() {
 
               <TagInput label="Technologies Used" value={form.technologies} onChange={set('technologies')} placeholder="Adobe Illustrator, Figma..." />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Live URL</label>
                   <input value={form.liveUrl} onChange={set('liveUrl')} className="input" placeholder="https://..." type="url" />
