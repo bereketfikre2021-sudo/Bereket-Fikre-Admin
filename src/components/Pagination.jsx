@@ -10,7 +10,7 @@ export default function Pagination({ pagination, onPageChange }) {
       <p className="text-sm text-gray-500 dark:text-gray-400">
         Showing <span className="font-medium">{from}–{to}</span> of <span className="font-medium">{total}</span>
       </p>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-wrap justify-center">
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={!pagination.hasPrev}

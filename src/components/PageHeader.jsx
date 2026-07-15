@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
  */
 export default function PageHeader({ title, subtitle, backTo, action }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+    <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
       <div className="flex items-center gap-3">
         {backTo && (
           <Link

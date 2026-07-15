@@ -51,7 +51,7 @@ function RequestDetail({ request, onClose, onStatusChange, onReplySent }) {
         </div>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-gray-500 dark:text-gray-400 mb-0.5">Phone</p>
               <p className="text-gray-900 dark:text-white">{request.phone || 'N/A'}</p>
