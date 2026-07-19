@@ -10,6 +10,8 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import RichTextEditor from '../components/RichTextEditor';
 import { useUnsavedChanges, UnsavedBanner, useFormSaveShortcut } from '../hooks/useUnsavedChanges';
 
+const DRAFT_KEY = 'admin_draft_insight';
+
 const EMPTY = {
   type: 'CASE_STUDY', title: '', excerpt: '', content: '',
   category: '', tags: [], author: 'Bereket Fikre',
@@ -26,10 +28,47 @@ export default function InsightFormPage() {
   const [form, setForm] = useState(EMPTY);
   const [coverImage, setCoverImage] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [showRestoreBanner, setShowRestoreBanner] = useState(false);
   const handleSubmitRef = useRef(null);
 
   useUnsavedChanges(isDirty);
   useFormSaveShortcut(() => handleSubmitRef.current?.());
+
+  // ── Draft autosave (new form only) ──────────────────────────────────────────
+  useEffect(() => {
+    if (isEdit) return;
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.title || parsed.excerpt) setShowRestoreBanner(true);
+      } catch {}
+    }
+  }, [isEdit]);
+
+  useEffect(() => {
+    if (isEdit || !isDirty) return;
+    const timer = setTimeout(() => {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [form, isDirty, isEdit]);
+
+  const restoreDraft = () => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (!saved) return;
+    try {
+      setForm(JSON.parse(saved));
+      setIsDirty(true);
+      setShowRestoreBanner(false);
+      toast.success('Draft restored');
+    } catch {}
+  };
+
+  const discardDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setShowRestoreBanner(false);
+  };
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['insight', id],
@@ -65,6 +104,7 @@ export default function InsightFormPage() {
     onSuccess: () => {
       toast.success(isEdit ? 'Insight updated!' : 'Insight created!');
       setIsDirty(false);
+      localStorage.removeItem(DRAFT_KEY);
       qc.invalidateQueries(['insights']);
       qc.invalidateQueries(['dashboard']);
       navigate('/insights');
@@ -97,6 +137,17 @@ export default function InsightFormPage() {
   return (
     <div className="max-w-4xl">
       <UnsavedBanner isDirty={isDirty} />
+      {/* Draft restore banner — new form only */}
+      {showRestoreBanner && !isEdit && (
+        <div className="mb-4 flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-sm text-amber-800 dark:text-amber-200">
+          <svg className="w-4 h-4 flex-shrink-0 text-amber-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <span className="flex-1">You have an unsaved draft. Restore it?</span>
+          <button onClick={restoreDraft} className="font-semibold underline hover:no-underline">Restore</button>
+          <button onClick={discardDraft} className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300">Discard</button>
+        </div>
+      )}
       <PageHeader title={isEdit ? 'Edit Insight' : 'New Insight'} backTo="/insights" />
 
       <form onSubmit={handleSubmit} className="space-y-6">

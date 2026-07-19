@@ -16,7 +16,6 @@ const StatCard = ({ label, value, sub, to, color = 'brand' }) => (
   </Link>
 );
 
-/** Small stat tile used in the analytics section */
 const AnalyticTile = ({ label, value, suffix = '' }) => (
   <div className="card p-4">
     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</p>
@@ -26,7 +25,6 @@ const AnalyticTile = ({ label, value, suffix = '' }) => (
   </div>
 );
 
-/** Bar-style list row */
 const BarRow = ({ label, value, max }) => {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
@@ -42,10 +40,76 @@ const BarRow = ({ label, value, max }) => {
   );
 };
 
+// ─── First-run checklist ──────────────────────────────────────────────────────
+const CHECKLIST = [
+  { key: 'heroImage',  label: 'Upload hero & about images',   to: '/settings',  check: (s) => !!s?.heroImage },
+  { key: 'project',   label: 'Add your first project',        to: '/projects/new',  check: (s) => (s?.projects?.total ?? 0) > 0 },
+  { key: 'service',   label: 'Add a service',                 to: '/services/new',  check: (s) => (s?.services?.total ?? 0) > 0 },
+  { key: 'insight',   label: 'Write a case study or blog',    to: '/insights/new',  check: (s) => (s?.insights?.total ?? 0) > 0 },
+  { key: 'partner',   label: 'Add a trusted partner logo',    to: '/partners',      check: (s) => (s?.partners?.total ?? 0) > 0 },
+  { key: 'faq',       label: 'Add at least one FAQ',          to: '/faqs',          check: (s) => (s?.faqs?.total ?? 0) > 0 },
+];
+
+function FirstRunChecklist({ stats, siteSettings }) {
+  const combined = { ...stats, heroImage: siteSettings?.heroImage };
+  const done = CHECKLIST.filter((c) => c.check(combined)).length;
+  const total = CHECKLIST.length;
+  if (done === total) return null; // hide once everything is done
+
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Get started</h2>
+        <span className="text-xs text-gray-400">{done}/{total} done</span>
+      </div>
+      {/* Progress bar */}
+      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-4">
+        <div
+          className="h-full bg-brand-500 rounded-full transition-all duration-500"
+          style={{ width: `${(done / total) * 100}%` }}
+        />
+      </div>
+      <ul className="space-y-2">
+        {CHECKLIST.map((item) => {
+          const completed = item.check(combined);
+          return (
+            <li key={item.key} className="flex items-center gap-3 text-sm">
+              <span className={`w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center border-2 transition-colors ${
+                completed
+                  ? 'bg-brand-500 border-brand-500 text-white'
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}>
+                {completed && (
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </span>
+              {completed ? (
+                <span className="text-gray-400 line-through">{item.label}</span>
+              ) : (
+                <Link to={item.to} className="text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 hover:underline">
+                  {item.label} →
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => api.get('/admin/dashboard').then((r) => r.data.data),
+  });
+
+  const { data: siteSettings } = useQuery({
+    queryKey: ['site-settings'],
+    queryFn: () => api.get('/site-settings').then((r) => r.data.data),
+    staleTime: 5 * 60 * 1000,
   });
 
   // GA analytics — non-blocking, gracefully hidden if credentials not set
@@ -53,7 +117,7 @@ export default function DashboardPage() {
     queryKey: ['analytics'],
     queryFn: () => api.get('/admin/analytics/all').then((r) => r.data.data),
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 min — matches backend cache
+    staleTime: 5 * 60 * 1000,
   });
 
   if (isLoading) return <LoadingSpinner message="Loading dashboard..." />;
@@ -68,6 +132,9 @@ export default function DashboardPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Overview of your portfolio content</p>
       </div>
 
+      {/* First-run checklist — visible until all steps complete */}
+      <FirstRunChecklist stats={stats} siteSettings={siteSettings} />
+
       {/* Inbox Alert */}
       {stats?.unread > 0 && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex items-center gap-3">
@@ -76,12 +143,31 @@ export default function DashboardPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
               You have <strong>{stats.unread}</strong> unread {stats.unread === 1 ? 'message' : 'messages'}
             </p>
+            {/* Break down by source */}
+            <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5 opacity-75">
+              {[
+                stats.contacts?.new > 0 && `${stats.contacts.new} contact ${stats.contacts.new === 1 ? 'message' : 'messages'}`,
+                stats.projectRequests?.new > 0 && `${stats.projectRequests.new} project ${stats.projectRequests.new === 1 ? 'request' : 'requests'}`,
+              ].filter(Boolean).join(' · ')}
+            </p>
           </div>
-          <Link to="/contacts" className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">View →</Link>
+          {/* Smart links — show both if both have unread, otherwise show the one that does */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {stats.contacts?.new > 0 && (
+              <Link to="/contacts" className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap">
+                Messages →
+              </Link>
+            )}
+            {stats.projectRequests?.new > 0 && (
+              <Link to="/project-requests" className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap">
+                Requests →
+              </Link>
+            )}
+          </div>
         </div>
       )}
 

@@ -1,8 +1,19 @@
 import { NavLink } from 'react-router-dom';
 import { useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+
+// ─── Unread badge ─────────────────────────────────────────────────────────────
+function UnreadBadge({ count }) {
+  if (!count || count < 1) return null;
+  return (
+    <span className="ml-auto min-w-[1.25rem] h-5 px-1 flex items-center justify-center rounded-full bg-blue-500 text-white text-[10px] font-bold leading-none">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
 
 const NAV_ITEMS = [
   {
@@ -59,12 +70,11 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
-  {
-    group: 'Inbox',
-  },
+  { group: 'Inbox' },
   {
     label: 'Contact Messages',
     path: '/contacts',
+    badgeKey: 'contacts',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -74,15 +84,14 @@ const NAV_ITEMS = [
   {
     label: 'Project Requests',
     path: '/project-requests',
+    badgeKey: 'projectRequests',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
       </svg>
     ),
   },
-  {
-    group: 'Account',
-  },
+  { group: 'Account' },
   {
     label: 'Settings',
     path: '/settings',
@@ -98,6 +107,19 @@ const NAV_ITEMS = [
 export default function Sidebar({ open, onClose }) {
   const { admin, logout, updateAdmin } = useAuth();
   const avatarInputRef = useRef(null);
+
+  // Poll dashboard stats every 60 s for unread counts — lightweight, cached
+  const { data: dashData } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: () => api.get('/admin/dashboard').then((r) => r.data.data),
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
+  });
+
+  const unread = {
+    contacts:        dashData?.stats?.contacts?.new        ?? 0,
+    projectRequests: dashData?.stats?.projectRequests?.new ?? 0,
+  };
 
   const handleAvatarClick = (e) => {
     e.stopPropagation();
@@ -168,6 +190,7 @@ export default function Sidebar({ open, onClose }) {
               </p>
             );
           }
+          const badgeCount = item.badgeKey ? unread[item.badgeKey] : 0;
           return (
             <NavLink
               key={item.path}
@@ -182,7 +205,8 @@ export default function Sidebar({ open, onClose }) {
               }
             >
               {item.icon}
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              <UnreadBadge count={badgeCount} />
             </NavLink>
           );
         })}
@@ -191,24 +215,18 @@ export default function Sidebar({ open, onClose }) {
       {/* Admin info */}
       <div className="p-3 border-t border-gray-200 dark:border-gray-800 flex-shrink-0">
         <div className="flex items-center gap-3 p-2 rounded-lg">
-          {/* Clickable avatar */}
           <div
             className="relative w-8 h-8 rounded-full flex-shrink-0 cursor-pointer group"
             onClick={handleAvatarClick}
             title="Click to change profile photo"
           >
             {admin?.avatar ? (
-              <img
-                src={admin.avatar}
-                alt={admin.name}
-                className="w-8 h-8 rounded-full object-cover"
-              />
+              <img src={admin.avatar} alt={admin.name} className="w-8 h-8 rounded-full object-cover" />
             ) : (
               <div className="w-8 h-8 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center text-brand-700 dark:text-brand-300 font-semibold text-xs">
                 {admin?.name?.charAt(0).toUpperCase()}
               </div>
             )}
-            {/* Hover overlay */}
             <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />

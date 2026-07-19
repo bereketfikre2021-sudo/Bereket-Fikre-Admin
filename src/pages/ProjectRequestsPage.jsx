@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { downloadCsv } from '../lib/api';
 import toast from 'react-hot-toast';
@@ -11,6 +11,72 @@ import StatusBadge from '../components/StatusBadge';
 import Pagination from '../components/Pagination';
 
 const STATUS_OPTIONS = ['NEW', 'READ', 'REPLIED', 'ARCHIVED'];
+
+// ─── Quick-reply popover ──────────────────────────────────────────────────────
+function QuickReply({ request, onSend, onClose }) {
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const handleSend = async () => {
+    if (!text.trim()) return;
+    setSending(true);
+    try {
+      await onSend(request.id, text.trim());
+      onClose();
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="card w-full max-w-md p-5 shadow-xl">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">Quick Reply</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              To: {request.firstName} {request.lastName} &lt;{request.email}&gt;
+            </p>
+          </div>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="mb-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400">
+          Re: {request.serviceNeeded} project request
+        </div>
+        <textarea
+          autoFocus
+          className="input resize-none text-sm min-h-[120px]"
+          placeholder={`Hi ${request.firstName},\n\nThank you for your project request...`}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSend(); }}
+        />
+        <p className="text-xs text-gray-400 mt-1 mb-3">Ctrl+Enter to send</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="btn-secondary text-xs !py-1.5">Cancel</button>
+          <button
+            onClick={handleSend}
+            disabled={sending || !text.trim()}
+            className="btn-primary text-xs !py-1.5 flex items-center gap-1.5 disabled:opacity-40"
+          >
+            {sending ? (
+              <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Sending...</>
+            ) : (
+              <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg> Send</>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function RequestDetail({ request, onClose, onStatusChange, onReplySent }) {
   const [notes, setNotes] = useState(request.notes || '');
@@ -159,6 +225,7 @@ export default function ProjectRequestsPage() {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
+  const [quickReply, setQuickReply] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
 
   const { data, isLoading } = useQuery({
@@ -273,6 +340,16 @@ export default function ProjectRequestsPage() {
                       <td className="px-4 py-3 text-xs text-gray-400 hidden lg:table-cell">{new Date(r.createdAt).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          {/* Quick reply */}
+                          <button
+                            onClick={() => setQuickReply(r)}
+                            className="p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            title="Quick reply"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                          </button>
                           <button onClick={() => setDeleteId(r.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -291,6 +368,14 @@ export default function ProjectRequestsPage() {
           </>
         )}
       </div>
+
+      {quickReply && (
+        <QuickReply
+          request={quickReply}
+          onClose={() => setQuickReply(null)}
+          onSend={(id, replyMessage) => replyMutation.mutateAsync({ id, replyMessage })}
+        />
+      )}
 
       {selected && (
         <RequestDetail
