@@ -527,7 +527,28 @@ export default function SettingsPage() {
     <div className="max-w-5xl">
       <PageHeader title="Settings" subtitle={SUBTITLES[active]} />
 
-      <div className="flex gap-6">
+      {/* Mobile: horizontal scrollable tab bar */}
+      <div className="sm:hidden mb-4 -mx-4 px-4 overflow-x-auto">
+        <div className="flex gap-1 pb-1 min-w-max">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActive(t.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                active === t.id
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+              }`}
+            >
+              {t.icon}
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop: sidebar + content */}
+      <div className="hidden sm:flex gap-6">
         {/* Left nav */}
         <nav className="w-44 flex-shrink-0 space-y-0.5">
           {TABS.map((t) => (
@@ -557,6 +578,18 @@ export default function SettingsPage() {
           {active === 'account'    && <AccountTab />}
           {active === 'appearance' && <AppearanceTab />}
         </div>
+      </div>
+
+      {/* Mobile: content below tab bar */}
+      <div className="sm:hidden">
+        {active === 'general'    && <GeneralTab />}
+        {active === 'website'    && <WebsiteTab />}
+        {active === 'seo'        && <SeoTab />}
+        {active === 'social'     && <SocialTab />}
+        {active === 'cloudinary' && <CloudinaryTab />}
+        {active === 'security'   && <SecurityTab />}
+        {active === 'account'    && <AccountTab />}
+        {active === 'appearance' && <AppearanceTab />}
       </div>
     </div>
   );

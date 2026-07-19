@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import SparklineChart from '../components/SparklineChart';
+import BuiltinAnalytics from '../components/BuiltinAnalytics';
 
 const StatCard = ({ label, value, sub, to, color = 'brand' }) => (
   <Link to={to} className="card p-5 hover:shadow-md transition-shadow group">
@@ -225,83 +226,91 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Google Analytics Section */}
+      {/* Google Analytics / Built-in Analytics Section */}
       <div>
-        <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-          Website Analytics
-          {ga?.realtime?.activeUsers != null && (
-            <span className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400 normal-case">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              {ga.realtime.activeUsers} active now
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            Website Analytics
+            {ga?.realtime?.activeUsers != null && (
+              <span className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400 normal-case">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                {ga.realtime.activeUsers} active now
+              </span>
+            )}
+          </h2>
+          {gaError && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 font-medium">
+              Built-in fallback
             </span>
           )}
-        </h2>
+        </div>
 
-        {gaLoading ? (
-          <div className="card p-6 flex items-center justify-center gap-3">
-            <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-gray-400">Loading analytics...</span>
-          </div>
-        ) : gaError ? (
-          <div className="card p-6 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Analytics not available — add GA credentials to Render environment variables.
-            </p>
-            <p className="text-xs text-gray-400 mt-1">GA_PROPERTY_ID · GA_CLIENT_EMAIL · GA_PRIVATE_KEY</p>
-          </div>
-        ) : ga ? (
-          <div className="space-y-4">
-            {/* Visitor overview tiles */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <AnalyticTile label="Today" value={ga.overview.visitorsToday?.toLocaleString()} />
-              <AnalyticTile label="This Week" value={ga.overview.visitorsThisWeek?.toLocaleString()} />
-              <AnalyticTile label="This Month" value={ga.overview.visitorsThisMonth?.toLocaleString()} />
-              <AnalyticTile label="Total Users" value={ga.overview.totalUsers?.toLocaleString()} />
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <AnalyticTile label="Page Views" value={ga.overview.pageViews?.toLocaleString()} />
-              <AnalyticTile label="Avg Session" value={ga.overview.avgSessionDuration} suffix="s" />
-              <AnalyticTile label="Bounce Rate" value={ga.overview.bounceRate} suffix="%" />
-            </div>
-
-            {/* Bottom grid: top pages, traffic sources, countries, devices */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-              <div className="card p-4 space-y-3">
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Top Pages</h3>
-                {ga.topPages?.slice(0, 6).map((p, i) => (
-                  <BarRow key={i} label={p.dimension || '/'} value={p.value} max={ga.topPages[0]?.value || 1} />
-                ))}
+        {/* GA Section */}
+        {!gaError && (
+          <>
+            {gaLoading ? (
+              <div className="card p-6 flex items-center justify-center gap-3">
+                <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-gray-400">Loading analytics...</span>
               </div>
-              <div className="card p-4 space-y-3">
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Traffic Sources</h3>
-                {ga.trafficSources?.slice(0, 6).map((s, i) => (
-                  <BarRow key={i} label={s.dimension} value={s.value} max={ga.trafficSources[0]?.value || 1} />
-                ))}
-              </div>
-              <div className="card p-4 space-y-3">
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Countries</h3>
-                {ga.countries?.slice(0, 6).map((c, i) => (
-                  <BarRow key={i} label={c.dimension} value={c.value} max={ga.countries[0]?.value || 1} />
-                ))}
-              </div>
+            ) : ga ? (
               <div className="space-y-4">
-                <div className="card p-4 space-y-3">
-                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Devices</h3>
-                  {ga.devices?.map((d, i) => (
-                    <BarRow key={i} label={d.dimension} value={d.value} max={ga.devices[0]?.value || 1} />
-                  ))}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <AnalyticTile label="Today"      value={ga.overview.visitorsToday?.toLocaleString()} />
+                  <AnalyticTile label="This Week"  value={ga.overview.visitorsThisWeek?.toLocaleString()} />
+                  <AnalyticTile label="This Month" value={ga.overview.visitorsThisMonth?.toLocaleString()} />
+                  <AnalyticTile label="Total Users" value={ga.overview.totalUsers?.toLocaleString()} />
                 </div>
-                <div className="card p-4 space-y-3">
-                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Browsers</h3>
-                  {ga.browsers?.slice(0, 4).map((b, i) => (
-                    <BarRow key={i} label={b.dimension} value={b.value} max={ga.browsers[0]?.value || 1} />
-                  ))}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <AnalyticTile label="Page Views"  value={ga.overview.pageViews?.toLocaleString()} />
+                  <AnalyticTile label="Avg Session" value={ga.overview.avgSessionDuration} suffix="s" />
+                  <AnalyticTile label="Bounce Rate" value={ga.overview.bounceRate} suffix="%" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div className="card p-4 space-y-3">
+                    <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Top Pages</h3>
+                    {ga.topPages?.slice(0, 6).map((p, i) => <BarRow key={i} label={p.dimension || '/'} value={p.value} max={ga.topPages[0]?.value || 1} />)}
+                  </div>
+                  <div className="card p-4 space-y-3">
+                    <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Traffic Sources</h3>
+                    {ga.trafficSources?.slice(0, 6).map((s, i) => <BarRow key={i} label={s.dimension} value={s.value} max={ga.trafficSources[0]?.value || 1} />)}
+                  </div>
+                  <div className="card p-4 space-y-3">
+                    <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Countries</h3>
+                    {ga.countries?.slice(0, 6).map((c, i) => <BarRow key={i} label={c.dimension} value={c.value} max={ga.countries[0]?.value || 1} />)}
+                  </div>
+                  <div className="space-y-4">
+                    <div className="card p-4 space-y-3">
+                      <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Devices</h3>
+                      {ga.devices?.map((d, i) => <BarRow key={i} label={d.dimension} value={d.value} max={ga.devices[0]?.value || 1} />)}
+                    </div>
+                    <div className="card p-4 space-y-3">
+                      <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Browsers</h3>
+                      {ga.browsers?.slice(0, 4).map((b, i) => <BarRow key={i} label={b.dimension} value={b.value} max={ga.browsers[0]?.value || 1} />)}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        ) : null}
+            ) : null}
+          </>
+        )}
+
+        {/* Built-in analytics — shown as fallback when GA fails, or always as secondary */}
+        {(gaError || !ga) && (
+          <BuiltinAnalytics />
+        )}
       </div>
+
+      {/* Built-in analytics always shown as secondary section when GA is working */}
+      {!gaError && ga && (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+            Built-in Analytics
+            <span className="ml-2 text-xs font-normal normal-case text-gray-400">self-hosted · updates every minute</span>
+          </h2>
+          <BuiltinAnalytics />
+        </div>
+      )}
 
     </div>
   );
